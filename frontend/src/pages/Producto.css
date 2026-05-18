@@ -1,0 +1,112 @@
+.producto-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 2.5rem;
+  padding-top: 2rem;
+  padding-bottom: 3rem;
+}
+
+/* Galería */
+.producto-galeria { grid-column: 1; }
+.galeria-principal {
+  aspect-ratio: 1;
+  border-radius: var(--radio-lg);
+  overflow: hidden;
+  background: var(--crema-dark);
+  border: 1px solid var(--borde);
+}
+.galeria-principal img { width: 100%; height: 100%; object-fit: cover; }
+.galeria-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 4rem; color: var(--terracota); opacity: 0.4;
+}
+.galeria-miniaturas { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
+.miniatura {
+  width: 64px; height: 64px;
+  border-radius: var(--radio);
+  overflow: hidden;
+  border: 2px solid transparent;
+  background: var(--crema-dark);
+  transition: border-color var(--transicion);
+  display: flex; align-items: center; justify-content: center;
+}
+.miniatura.activa { border-color: var(--terracota); }
+.miniatura img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Info */
+.producto-info { grid-column: 2; display: flex; flex-direction: column; gap: 1rem; }
+.producto-info h1 { font-size: 1.9rem; }
+.producto-calificacion { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; color: var(--texto-suave); }
+.producto-precio { font-size: 2rem; font-weight: 700; color: var(--terracota); }
+.precio-mayoreo { font-size: 0.9rem; color: var(--texto-suave); }
+.producto-descripcion { font-size: 0.97rem; line-height: 1.7; }
+
+.producto-detalles {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.3rem 1rem;
+  background: var(--crema-dark);
+  border-radius: var(--radio);
+  padding: 1rem;
+  font-size: 0.88rem;
+}
+.producto-detalles dt { font-weight: 600; color: var(--texto); }
+.producto-detalles dd { color: var(--texto-suave); }
+
+.producto-artesano {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.85rem 1rem;
+  background: white;
+  border: 1.5px solid var(--borde);
+  border-radius: var(--radio-lg);
+  transition: all var(--transicion);
+}
+.producto-artesano:hover { border-color: var(--terracota); }
+.artesano-mini-info { display: flex; flex-direction: column; gap: 0.2rem; }
+.artesano-mini-info strong { font-size: 0.95rem; }
+.artesano-lugar { font-size: 0.82rem; color: var(--texto-suave); }
+.ver-perfil { font-size: 0.85rem; color: var(--terracota); font-weight: 500; white-space: nowrap; }
+
+/* Pedido */
+.seccion-pedido {
+  background: var(--crema-dark);
+  border-radius: var(--radio-lg);
+  padding: 1.25rem;
+  border: 1px solid var(--borde);
+}
+.seccion-pedido h3 { margin-bottom: 1rem; font-size: 1.05rem; }
+.form-pedido { display: flex; flex-direction: column; gap: 0.75rem; }
+
+/* Reseñas */
+.seccion-resenas {
+  grid-column: 1 / -1;
+  border-top: 1.5px solid var(--borde);
+  padding-top: 2rem;
+}
+.seccion-resenas h2 { margin-bottom: 1.5rem; }
+.lista-resenas { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
+.resena {
+  background: white;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  padding: 1rem;
+}
+.resena-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+.resena-fecha { font-size: 0.78rem; color: var(--texto-suave); margin-left: auto; }
+
+.form-resena {
+  background: var(--crema-dark);
+  border-radius: var(--radio-lg);
+  padding: 1.5rem;
+  display: flex; flex-direction: column; gap: 0.75rem;
+  max-width: 560px;
+}
+.form-resena h3 { margin-bottom: 0.25rem; }
+
+@media (max-width: 768px) {
+  .producto-layout { grid-template-columns: 1fr; }
+  .producto-info { grid-column: 1; }
+  .seccion-resenas { grid-column: 1; }
+}
