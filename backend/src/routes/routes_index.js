@@ -7,6 +7,8 @@ const auth = require('../controllers/authController');
 const artesanos = require('../controllers/artesanosController');
 const productos = require('../controllers/productosController');
 const otros = require('../controllers/otrosControllers');
+const paypal = require('../controllers/paypalController');
+const gemini = require('../controllers/geminiController');
 
 // ── AUTH ──────────────────────────────────────
 router.post('/auth/register', auth.register);
@@ -47,6 +49,14 @@ router.put('/categorias/:id', verificarToken, soloAdmin, otros.actualizarCategor
 router.post('/pedidos', otros.crearPedido);
 router.get('/pedidos/mis-pedidos', verificarToken, soloArtesano, otros.listarPedidosArtesano);
 router.put('/pedidos/:id/estado', verificarToken, soloArtesano, otros.actualizarEstadoPedido);
+
+// ── PAYPAL ────────────────────────────────────
+router.get('/paypal/client-id', paypal.obtenerClientId);
+router.post('/paypal/crear-orden', paypal.crearOrden);
+router.post('/paypal/capturar-orden', paypal.capturarOrden);
+
+// ── GEMINI ────────────────────────────────────
+router.post('/gemini/buscar', gemini.buscarProductos);
 
 // ── ADMIN ─────────────────────────────────────
 router.get('/admin/pedidos', verificarToken, soloAdmin, otros.listarTodosPedidos);

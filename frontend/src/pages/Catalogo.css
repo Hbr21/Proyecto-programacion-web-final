@@ -38,8 +38,7 @@
   margin-bottom: 0.4rem;
 }
 
-.filtro-grupo select,
-.filtro-grupo input[type="range"] {
+.filtro-grupo select {
   width: 100%;
   padding: 0.5rem 0.7rem;
   border: 1.5px solid var(--borde);
@@ -54,12 +53,19 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
   flex-wrap: wrap;
 }
 
-.catalogo-header h1 {
-  font-size: 1.75rem;
+.catalogo-header h1 { font-size: 1.75rem; }
+
+.catalogo-modo-btns {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.catalogo-buscador {
+  margin-bottom: 0.75rem;
 }
 
 .catalogo-buscador input {
@@ -68,7 +74,7 @@
   border-radius: 100px;
   font-family: var(--font-body);
   font-size: 0.9rem;
-  width: 260px;
+  width: 100%;
   background: white;
   transition: border-color var(--transicion);
 }
@@ -90,8 +96,5 @@
   }
   .catalogo-filtros {
     position: static;
-  }
-  .catalogo-buscador input {
-    width: 100%;
   }
 }

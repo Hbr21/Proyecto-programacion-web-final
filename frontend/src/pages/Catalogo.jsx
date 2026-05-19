@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import { TarjetaProducto, Cargando, Vacio } from '../components/Componentes';
+import BuscadorIA from '../components/BuscadorIA';
 import '../components/Componentes.css';
 import './Catalogo.css';
 
@@ -11,6 +12,7 @@ export default function Catalogo() {
   const [categorias, setCategorias] = useState([]);
   const [total, setTotal] = useState(0);
   const [cargando, setCargando] = useState(true);
+  const [modoIA, setModoIA] = useState(false);
 
   const pagina = parseInt(searchParams.get('pagina') || '1');
   const categoria = searchParams.get('categoria') || '';
@@ -33,7 +35,7 @@ export default function Catalogo() {
     }
   }, [pagina, categoria, buscar]);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => { if (!modoIA) cargar(); }, [cargar, modoIA]);
 
   useEffect(() => {
     api.get('/categorias').then(res => setCategorias(res.data)).catch(console.error);
@@ -57,7 +59,7 @@ export default function Catalogo() {
           <label>Categoría</label>
           <select
             value={categoria}
-            onChange={e => actualizarFiltro('categoria', e.target.value)}
+            onChange={e => { actualizarFiltro('categoria', e.target.value); setModoIA(false); }}
           >
             <option value="">Todas</option>
             {categorias.map(c => (
@@ -68,45 +70,71 @@ export default function Catalogo() {
 
         <button
           className="btn btn-secundario btn-sm w-full mt-2"
-          onClick={() => setSearchParams({})}
+          onClick={() => { setSearchParams({}); setModoIA(false); }}
         >
           Limpiar filtros
         </button>
       </aside>
 
       <div className="catalogo-contenido">
+        {/* Toggle modo normal / modo IA */}
         <div className="catalogo-header">
           <h1>Catálogo</h1>
-          <div className="catalogo-buscador">
-            <input
-              type="search"
-              placeholder="Buscar productos, técnicas..."
-              value={buscar}
-              onChange={e => actualizarFiltro('buscar', e.target.value)}
-            />
+          <div className="catalogo-modo-btns">
+            <button
+              className={`btn btn-sm ${!modoIA ? 'btn-primario' : 'btn-secundario'}`}
+              onClick={() => setModoIA(false)}
+            >
+              🔍 Normal
+            </button>
+            <button
+              className={`btn btn-sm ${modoIA ? 'btn-primario' : 'btn-secundario'}`}
+              onClick={() => setModoIA(true)}
+            >
+              ✨ Buscar con IA
+            </button>
           </div>
         </div>
 
-        <p className="catalogo-total">{total} producto{total !== 1 ? 's' : ''} encontrado{total !== 1 ? 's' : ''}</p>
+        {/* Modo búsqueda normal */}
+        {!modoIA && (
+          <>
+            <div className="catalogo-buscador">
+              <input
+                type="search"
+                placeholder="Buscar productos, técnicas..."
+                value={buscar}
+                onChange={e => actualizarFiltro('buscar', e.target.value)}
+              />
+            </div>
 
-        {cargando ? <Cargando /> : productos.length === 0 ? (
-          <Vacio mensaje="No hay productos con estos filtros." />
-        ) : (
-          <div className="grid-3">
-            {productos.map(p => <TarjetaProducto key={p.id} producto={p} />)}
-          </div>
+            <p className="catalogo-total">{total} producto{total !== 1 ? 's' : ''} encontrado{total !== 1 ? 's' : ''}</p>
+
+            {cargando ? <Cargando /> : productos.length === 0 ? (
+              <Vacio mensaje="No hay productos con estos filtros." />
+            ) : (
+              <div className="grid-3">
+                {productos.map(p => <TarjetaProducto key={p.id} producto={p} />)}
+              </div>
+            )}
+
+            {totalPaginas > 1 && (
+              <div className="paginacion">
+                {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(p => (
+                  <button
+                    key={p}
+                    className={p === pagina ? 'activo' : ''}
+                    onClick={() => actualizarFiltro('pagina', p)}
+                  >{p}</button>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
-        {totalPaginas > 1 && (
-          <div className="paginacion">
-            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(p => (
-              <button
-                key={p}
-                className={p === pagina ? 'activo' : ''}
-                onClick={() => actualizarFiltro('pagina', p)}
-              >{p}</button>
-            ))}
-          </div>
+        {/* Modo búsqueda con IA */}
+        {modoIA && (
+          <BuscadorIA />
         )}
       </div>
     </main>
