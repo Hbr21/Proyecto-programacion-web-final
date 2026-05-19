@@ -26,6 +26,24 @@ pool.on('error', (err) => {
   console.error('Error inesperado en el cliente de PostgreSQL', err);
 });
 
+// ==========================================
+// CÓDIGO AGREGADO: Arreglo automático de decimales para coordenadas
+// ==========================================
+pool.query(`
+  ALTER TABLE artesanos 
+  ALTER COLUMN latitud TYPE DECIMAL(18, 15),
+  ALTER COLUMN longitud TYPE DECIMAL(18, 15);
+`)
+.then(() => {
+  console.log("🚀 [DB-FIX] Columnas latitud y longitud actualizadas con éxito a DECIMAL(18,15).");
+})
+.catch((err) => {
+  // Si las columnas ya se actualizaron antes, PostgreSQL podría lanzar un aviso, 
+  // atrapamos el error aquí para que tu backend no se detenga.
+  console.log("⚠️ [DB-FIX] Nota sobre columnas (puede que ya estuvieran actualizadas):", err.message);
+});
+// ==========================================
+
 module.exports = {
   query: (text, params) => pool.query(text, params),
   pool,
