@@ -1,7 +1,8 @@
 import axios from 'axios';
 
+// Forzamos la URL de producción de tu backend en Render con el /api incluido
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: 'https://artesanos-backend-p5a2.onrender.com/api',
   timeout: 15000,
 });
 
