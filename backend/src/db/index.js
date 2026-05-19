@@ -27,21 +27,28 @@ pool.on('error', (err) => {
 });
 
 // ==========================================
-// CÓDIGO AGREGADO: Arreglo automático de decimales para coordenadas
+// CÓDIGO ACTUALIZADO: Crea las columnas si no existen y ajusta sus decimales
 // ==========================================
-pool.query(`
-  ALTER TABLE artesanos 
-  ALTER COLUMN latitud TYPE DECIMAL(18, 15),
-  ALTER COLUMN longitud TYPE DECIMAL(18, 15);
-`)
-.then(() => {
-  console.log("🚀 [DB-FIX] Columnas latitud y longitud actualizadas con éxito a DECIMAL(18,15).");
-})
-.catch((err) => {
-  // Si las columnas ya se actualizaron antes, PostgreSQL podría lanzar un aviso, 
-  // atrapamos el error aquí para que tu backend no se detenga.
-  console.log("⚠️ [DB-FIX] Nota sobre columnas (puede que ya estuvieran actualizadas):", err.message);
-});
+(async () => {
+  try {
+    // 1. Intentamos agregar la columna latitud si no existe
+    await pool.query(`ALTER TABLE artesanos ADD COLUMN IF NOT EXISTS latitud DECIMAL(18, 15);`);
+    
+    // 2. Intentamos agregar la columna longitud si no existe
+    await pool.query(`ALTER TABLE artesanos ADD COLUMN IF NOT EXISTS longitud DECIMAL(18, 15);`);
+    
+    // 3. Por si acaso ya existían con el formato viejo, aseguramos su tipo de dato exacto
+    await pool.query(`
+      ALTER TABLE artesanos 
+      ALTER COLUMN latitud TYPE DECIMAL(18, 15),
+      ALTER COLUMN longitud TYPE DECIMAL(18, 15);
+    `);
+    
+    console.log("🚀 [DB-FIX] Columnas latitud y longitud aseguradas con éxito en DECIMAL(18,15).");
+  } catch (err) {
+    console.error("❌ [DB-FIX] Error procesando las columnas de ubicación:", err.message);
+  }
+})();
 // ==========================================
 
 module.exports = {
