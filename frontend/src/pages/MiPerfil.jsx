@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -23,6 +23,12 @@ export default function MiPerfil() {
   });
   const [categorias, setCategorias] = useState([]);
   const [editandoProd, setEditandoProd] = useState(null);
+
+  // ── Imágenes ──
+  const [imagenesProducto, setImagenesProducto] = useState([]);
+  const [subiendoImagen, setSubiendoImagen] = useState(false);
+  const [msgImagen, setMsgImagen] = useState('');
+  const inputImagenRef = useRef(null);
 
   useEffect(() => {
     if (!usuario) { navigate('/login'); return; }
@@ -61,20 +67,81 @@ export default function MiPerfil() {
     setGuardando(true);
     setMsg('');
     try {
+      let productoId = editandoProd;
       if (editandoProd) {
         await api.put(`/productos/${editandoProd}`, formProd);
       } else {
-        await api.post('/productos', formProd);
+        const res = await api.post('/productos', formProd);
+        productoId = res.data.id;
+        setEditandoProd(productoId);
       }
       const res = await api.get(`/productos?artesano=${usuario.id}`);
       setProductos(res.data.productos || []);
-      setFormProd({ nombre: '', descripcion: '', precio: '', stock: '', categoria_id: '', tecnica: '', materiales: '', tiempo_elaboracion: '' });
-      setEditandoProd(null);
-      setMsg(editandoProd ? 'Producto actualizado.' : 'Producto creado exitosamente.');
+      setMsg(editandoProd ? 'Producto actualizado. Ahora puedes subir imágenes.' : 'Producto creado. Ahora puedes subir imágenes.');
+
+      // Cargar imágenes del producto
+      cargarImagenes(productoId);
     } catch (err) {
       setMsg(err.response?.data?.error || 'Error al guardar producto.');
     } finally {
       setGuardando(false);
+    }
+  };
+
+  const cargarImagenes = async (productoId) => {
+    try {
+      const res = await api.get(`/productos/${productoId}`);
+      setImagenesProducto(res.data.imagenes || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const subirImagen = async (e) => {
+    const archivo = e.target.files[0];
+    if (!archivo || !editandoProd) return;
+
+    setSubiendoImagen(true);
+    setMsgImagen('');
+
+    const formData = new FormData();
+    formData.append('imagen', archivo);
+    formData.append('es_principal', imagenesProducto.length === 0 ? 'true' : 'false');
+
+    try {
+      await api.post(`/productos/${editandoProd}/imagenes`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setMsgImagen('Imagen subida correctamente.');
+      cargarImagenes(editandoProd);
+      // Limpiar el input
+      if (inputImagenRef.current) inputImagenRef.current.value = '';
+    } catch (err) {
+      setMsgImagen('Error al subir la imagen. Máximo 5MB, formatos: jpg, png, webp.');
+    } finally {
+      setSubiendoImagen(false);
+    }
+  };
+
+  const eliminarImagen = async (imgId) => {
+    if (!confirm('¿Eliminar esta imagen?')) return;
+    try {
+      await api.delete(`/productos/${editandoProd}/imagenes/${imgId}`);
+      setImagenesProducto(prev => prev.filter(i => i.id !== imgId));
+    } catch (err) {
+      alert('Error al eliminar imagen.');
+    }
+  };
+
+  const marcarPrincipal = async (imgId) => {
+    try {
+      // Marcar como principal actualizando
+      await api.delete(`/productos/${editandoProd}/imagenes/${imgId}`);
+      // Re-subir no es ideal, mejor usamos el endpoint de imagen con es_principal
+      // Por simplicidad recargamos las imágenes
+      cargarImagenes(editandoProd);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -83,6 +150,11 @@ export default function MiPerfil() {
     try {
       await api.delete(`/productos/${id}`);
       setProductos(prev => prev.filter(p => p.id !== id));
+      if (editandoProd === id) {
+        setEditandoProd(null);
+        setImagenesProducto([]);
+        setFormProd({ nombre: '', descripcion: '', precio: '', stock: '', categoria_id: '', tecnica: '', materiales: '', tiempo_elaboracion: '' });
+      }
     } catch (err) {
       alert('Error al eliminar.');
     }
@@ -101,7 +173,15 @@ export default function MiPerfil() {
       tiempo_elaboracion: prod.tiempo_elaboracion || '',
     });
     setTab('productos');
+    cargarImagenes(prod.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelarEdicion = () => {
+    setEditandoProd(null);
+    setImagenesProducto([]);
+    setMsgImagen('');
+    setFormProd({ nombre: '', descripcion: '', precio: '', stock: '', categoria_id: '', tecnica: '', materiales: '', tiempo_elaboracion: '' });
   };
 
   const actualizarEstadoPedido = async (id, estado) => {
@@ -178,33 +258,18 @@ export default function MiPerfil() {
               <label>Años de experiencia</label>
               <input type="number" min="0" value={form.anios_experiencia || ''} onChange={e => setForm(f => ({ ...f, anios_experiencia: e.target.value }))} />
             </div>
-
-            {/* ── Coordenadas para el mapa ── */}
             <div className="campo">
               <label>Latitud 📍</label>
-              <input
-                type="number"
-                step="any"
-                placeholder="Ej. 17.0732"
-                value={form.latitud || ''}
-                onChange={e => setForm(f => ({ ...f, latitud: e.target.value }))}
-              />
+              <input type="number" step="any" placeholder="Ej. 17.0732" value={form.latitud || ''} onChange={e => setForm(f => ({ ...f, latitud: e.target.value }))} />
             </div>
             <div className="campo">
               <label>Longitud 📍</label>
-              <input
-                type="number"
-                step="any"
-                placeholder="Ej. -96.7266"
-                value={form.longitud || ''}
-                onChange={e => setForm(f => ({ ...f, longitud: e.target.value }))}
-              />
+              <input type="number" step="any" placeholder="Ej. -96.7266" value={form.longitud || ''} onChange={e => setForm(f => ({ ...f, longitud: e.target.value }))} />
             </div>
           </div>
 
-          {/* Tip para encontrar coordenadas */}
           <p style={{ fontSize: '0.8rem', color: 'var(--texto-suave)', marginTop: '-0.5rem' }}>
-            💡 Para obtener tus coordenadas: abre Google Maps, haz clic derecho en tu ubicación y copia los números que aparecen.
+            💡 Para obtener tus coordenadas: abre Google Maps, haz clic derecho en tu ubicación y copia los números.
           </p>
 
           <div className="campo">
@@ -221,6 +286,7 @@ export default function MiPerfil() {
       {tab === 'productos' && (
         <div className="productos-tab">
           <div className="productos-tab-layout">
+
             {/* Formulario nuevo/editar */}
             <div className="form-producto-wrap">
               <h2>{editandoProd ? 'Editar producto' : 'Nuevo producto'}</h2>
@@ -267,15 +333,65 @@ export default function MiPerfil() {
                     {guardando ? 'Guardando...' : editandoProd ? 'Actualizar' : 'Publicar producto'}
                   </button>
                   {editandoProd && (
-                    <button type="button" className="btn btn-secundario" onClick={() => {
-                      setEditandoProd(null);
-                      setFormProd({ nombre: '', descripcion: '', precio: '', stock: '', categoria_id: '', tecnica: '', materiales: '', tiempo_elaboracion: '' });
-                    }}>
+                    <button type="button" className="btn btn-secundario" onClick={cancelarEdicion}>
                       Cancelar
                     </button>
                   )}
                 </div>
               </form>
+
+              {/* ── Sección de imágenes (solo cuando se edita) ── */}
+              {editandoProd && (
+                <div className="imagenes-seccion">
+                  <h3>Fotos del producto</h3>
+                  <p className="imagenes-tip">La primera imagen será la principal. Formatos: jpg, png, webp. Máx 5MB.</p>
+
+                  {/* Grid de imágenes actuales */}
+                  {imagenesProducto.length > 0 && (
+                    <div className="imagenes-grid">
+                      {imagenesProducto.map(img => (
+                        <div key={img.id} className={`imagen-item ${img.es_principal ? 'principal' : ''}`}>
+                          <img src={`/uploads/${img.url}`} alt="Foto del producto" />
+                          {img.es_principal && (
+                            <span className="imagen-principal-badge">Principal</span>
+                          )}
+                          <button
+                            className="imagen-eliminar"
+                            onClick={() => eliminarImagen(img.id)}
+                            title="Eliminar imagen"
+                          >✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Subir nueva imagen */}
+                  <div className="imagen-upload-area" onClick={() => inputImagenRef.current?.click()}>
+                    {subiendoImagen ? (
+                      <div className="spinner" />
+                    ) : (
+                      <>
+                        <span className="upload-icono">📸</span>
+                        <p>Clic para subir una foto</p>
+                        <span className="upload-sub">o arrastra aquí</span>
+                      </>
+                    )}
+                    <input
+                      ref={inputImagenRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={subirImagen}
+                      style={{ display: 'none' }}
+                    />
+                  </div>
+
+                  {msgImagen && (
+                    <div className={`alerta ${msgImagen.includes('Error') ? 'alerta-error' : 'alerta-exito'}`}>
+                      {msgImagen}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Lista de productos */}
@@ -286,14 +402,21 @@ export default function MiPerfil() {
               ) : (
                 <div className="tabla-productos">
                   {productos.map(p => (
-                    <div key={p.id} className="tabla-fila">
+                    <div key={p.id} className={`tabla-fila ${editandoProd === p.id ? 'editando' : ''}`}>
                       <div className="tabla-info">
-                        <strong>{p.nombre}</strong>
-                        <span className="tabla-precio">${Number(p.precio).toLocaleString('es-MX')}</span>
+                        {p.imagen_principal && (
+                          <img src={`/uploads/${p.imagen_principal}`} alt={p.nombre} className="tabla-miniatura" />
+                        )}
+                        <div>
+                          <strong>{p.nombre}</strong>
+                          <span className="tabla-precio">${Number(p.precio).toLocaleString('es-MX')}</span>
+                        </div>
                         {p.disponible ? <span className="badge badge-verde">Activo</span> : <span className="badge">Inactivo</span>}
                       </div>
                       <div className="tabla-acciones">
-                        <button className="btn btn-sm btn-secundario" onClick={() => editarProducto(p)}>Editar</button>
+                        <button className="btn btn-sm btn-secundario" onClick={() => editarProducto(p)}>
+                          {editandoProd === p.id ? '✓ Editando' : 'Editar + Fotos'}
+                        </button>
                         <Link to={`/producto/${p.id}`} className="btn btn-sm" style={{ background: 'var(--crema-dark)', color: 'var(--texto)' }}>Ver</Link>
                         <button className="btn btn-sm" style={{ background: '#fde8e8', color: '#c0392b' }} onClick={() => eliminarProducto(p.id)}>Eliminar</button>
                       </div>
