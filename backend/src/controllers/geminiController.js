@@ -59,8 +59,12 @@ Instrucciones:
 }
 `;
 
-    // 3. Llamar a Gemini
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.0-pro' });
+    // 3. Llamar a Gemini (Aseguramos el modelo correcto y forzamos salida JSON nativa)
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-2.0-flash',
+      generationConfig: { responseMimeType: "application/json" } // El modelo responderá en JSON puro sin bloques ```json
+    });
+    
     const respuesta = await model.generateContent(prompt);
     const texto = respuesta.response.text();
 
@@ -69,8 +73,7 @@ Instrucciones:
     let explicacion = '';
 
     try {
-      const jsonLimpio = texto.replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(jsonLimpio);
+      const parsed = JSON.parse(texto.trim());
       idsSeleccionados = parsed.ids || [];
       explicacion = parsed.explicacion || '';
     } catch (e) {
