@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 const verificarToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
     return res.status(401).json({ error: 'Acceso denegado. Token requerido.' });
@@ -31,4 +31,12 @@ const soloArtesano = (req, res, next) => {
   next();
 };
 
-module.exports = { verificarToken, soloAdmin, soloArtesano };
+// Comprador, artesano y admin pueden acceder
+const usuarioAutenticado = (req, res, next) => {
+  if (!req.usuario) {
+    return res.status(403).json({ error: 'Debes iniciar sesión.' });
+  }
+  next();
+};
+
+module.exports = { verificarToken, soloAdmin, soloArtesano, usuarioAutenticado };

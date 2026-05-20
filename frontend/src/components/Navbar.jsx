@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCarrito } from '../context/CarritoContext';
 import './Navbar.css';
 
 export default function Navbar() {
-  const { usuario, logout, esAdmin } = useAuth();
+  const { usuario, logout, esAdmin, esArtesano } = useAuth();
+  const { totalItems } = useCarrito();
   const navigate = useNavigate();
   const [menuAbierto, setMenuAbierto] = useState(false);
 
@@ -28,9 +30,25 @@ export default function Navbar() {
 
           {usuario ? (
             <div className="navbar-usuario">
-              <span className="usuario-nombre">Hola, {usuario.nombre.split(' ')[0]}</span>
-              {esAdmin && <Link to="/admin" className="btn btn-sm btn-verde" onClick={() => setMenuAbierto(false)}>Admin</Link>}
-              <Link to="/mi-perfil" className="btn btn-sm btn-secundario" onClick={() => setMenuAbierto(false)}>Mi perfil</Link>
+              <span className="usuario-nombre ocultar-movil">Hola, {usuario.nombre.split(' ')[0]}</span>
+
+              {/* Carrito — visible para todos los usuarios logueados */}
+              <Link to="/carrito" className="carrito-btn" onClick={() => setMenuAbierto(false)}>
+                🛒
+                {totalItems > 0 && (
+                  <span className="carrito-badge">{totalItems}</span>
+                )}
+              </Link>
+
+              {esAdmin && (
+                <Link to="/admin" className="btn btn-sm btn-verde" onClick={() => setMenuAbierto(false)}>Admin</Link>
+              )}
+
+              {/* Mi perfil solo para artesanos y admin */}
+              {esArtesano && (
+                <Link to="/mi-perfil" className="btn btn-sm btn-secundario" onClick={() => setMenuAbierto(false)}>Mi perfil</Link>
+              )}
+
               <button className="btn btn-sm btn-primario" onClick={handleLogout}>Salir</button>
             </div>
           ) : (

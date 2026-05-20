@@ -14,8 +14,15 @@ export function AuthProvider({ children }) {
     const token = localStorage.getItem('token');
     if (token) {
       api.get('/auth/me')
-        .then(res => { setUsuario(res.data); localStorage.setItem('usuario', JSON.stringify(res.data)); })
-        .catch(() => { localStorage.removeItem('token'); localStorage.removeItem('usuario'); setUsuario(null); })
+        .then(res => {
+          setUsuario(res.data);
+          localStorage.setItem('usuario', JSON.stringify(res.data));
+        })
+        .catch(() => {
+          localStorage.removeItem('token');
+          localStorage.removeItem('usuario');
+          setUsuario(null);
+        })
         .finally(() => setCargando(false));
     } else {
       setCargando(false);
@@ -30,8 +37,8 @@ export function AuthProvider({ children }) {
     return res.data;
   };
 
-  const register = async (nombre, email, password) => {
-    const res = await api.post('/auth/register', { nombre, email, password });
+  const register = async (nombre, email, password, rol = 'comprador') => {
+    const res = await api.post('/auth/register', { nombre, email, password, rol });
     localStorage.setItem('token', res.data.token);
     localStorage.setItem('usuario', JSON.stringify(res.data.usuario));
     setUsuario(res.data.usuario);
@@ -45,7 +52,16 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ usuario, login, register, logout, cargando, esAdmin: usuario?.rol === 'admin' }}>
+    <AuthContext.Provider value={{
+      usuario,
+      login,
+      register,
+      logout,
+      cargando,
+      esAdmin: usuario?.rol === 'admin',
+      esArtesano: usuario?.rol === 'artesano' || usuario?.rol === 'admin',
+      esComprador: usuario?.rol === 'comprador',
+    }}>
       {children}
     </AuthContext.Provider>
   );

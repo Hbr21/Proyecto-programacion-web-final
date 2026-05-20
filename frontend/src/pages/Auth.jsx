@@ -16,7 +16,9 @@ export function Login() {
     setCargando(true);
     try {
       const data = await login(form.email, form.password);
-      navigate(data.usuario.rol === 'admin' ? '/admin' : '/mi-perfil');
+      if (data.usuario.rol === 'admin') navigate('/admin');
+      else if (data.usuario.rol === 'artesano') navigate('/mi-perfil');
+      else navigate('/catalogo');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al iniciar sesión.');
     } finally {
@@ -30,7 +32,7 @@ export function Login() {
         <div className="auth-header">
           <span className="auth-simbolo">✦</span>
           <h1>Bienvenido</h1>
-          <p>Ingresa a tu cuenta de artesano</p>
+          <p>Ingresa a tu cuenta</p>
         </div>
         {error && <div className="alerta alerta-error">{error}</div>}
         <form onSubmit={handleSubmit} className="auth-form">
@@ -69,7 +71,7 @@ export function Login() {
 export function Registro() {
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ nombre: '', email: '', password: '', confirmar: '' });
+  const [form, setForm] = useState({ nombre: '', email: '', password: '', confirmar: '', rol: 'comprador' });
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
 
@@ -80,8 +82,9 @@ export function Registro() {
     if (form.password.length < 6) return setError('La contraseña debe tener al menos 6 caracteres.');
     setCargando(true);
     try {
-      await register(form.nombre, form.email, form.password);
-      navigate('/mi-perfil');
+      await register(form.nombre, form.email, form.password, form.rol);
+      if (form.rol === 'artesano') navigate('/mi-perfil');
+      else navigate('/catalogo');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al registrarse.');
     } finally {
@@ -95,7 +98,7 @@ export function Registro() {
         <div className="auth-header">
           <span className="auth-simbolo">✦</span>
           <h1>Únete</h1>
-          <p>Crea tu perfil de artesano</p>
+          <p>Crea tu cuenta</p>
         </div>
         {error && <div className="alerta alerta-error">{error}</div>}
         <form onSubmit={handleSubmit} className="auth-form">
@@ -104,7 +107,7 @@ export function Registro() {
             <input
               required value={form.nombre}
               onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
-              placeholder="María Guadalupe López"
+              placeholder="Tu nombre completo"
             />
           </div>
           <div className="campo">
@@ -131,8 +134,34 @@ export function Registro() {
               placeholder="Repite tu contraseña"
             />
           </div>
+
+          {/* Selector de rol */}
+          <div className="campo">
+            <label>¿Cómo quieres usar la plataforma?</label>
+            <div className="rol-selector">
+              <button
+                type="button"
+                className={`rol-opcion ${form.rol === 'comprador' ? 'activo' : ''}`}
+                onClick={() => setForm(f => ({ ...f, rol: 'comprador' }))}
+              >
+                <span className="rol-icono">🛍</span>
+                <strong>Comprador</strong>
+                <span>Explora y compra artesanías</span>
+              </button>
+              <button
+                type="button"
+                className={`rol-opcion ${form.rol === 'artesano' ? 'activo' : ''}`}
+                onClick={() => setForm(f => ({ ...f, rol: 'artesano' }))}
+              >
+                <span className="rol-icono">🎨</span>
+                <strong>Artesano</strong>
+                <span>Vende tus creaciones</span>
+              </button>
+            </div>
+          </div>
+
           <button type="submit" className="btn btn-primario w-full" disabled={cargando}>
-            {cargando ? 'Creando cuenta...' : 'Crear cuenta'}
+            {cargando ? 'Creando cuenta...' : `Registrarme como ${form.rol}`}
           </button>
         </form>
         <p className="auth-footer">

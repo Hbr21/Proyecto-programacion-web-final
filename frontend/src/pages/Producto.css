@@ -1,7 +1,6 @@
 .producto-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto;
   gap: 2.5rem;
   padding-top: 2rem;
   padding-bottom: 3rem;
@@ -69,9 +68,87 @@
 .artesano-lugar { font-size: 0.82rem; color: var(--texto-suave); }
 .ver-perfil { font-size: 0.85rem; color: var(--terracota); font-weight: 500; white-space: nowrap; }
 
-/* Pedido */
-.seccion-pedido {
+/* ── Sección de compra ── */
+.seccion-compra {
   background: var(--crema-dark);
+  border: 1.5px solid var(--borde);
+  border-radius: var(--radio-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.compra-cantidad {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+}
+
+.cantidad-control-producto {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+  background: white;
+}
+
+.cantidad-control-producto button {
+  width: 32px; height: 32px;
+  background: var(--crema-dark);
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background var(--transicion);
+}
+
+.cantidad-control-producto button:hover { background: var(--borde); }
+.cantidad-control-producto span {
+  padding: 0 0.75rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  min-width: 36px;
+  text-align: center;
+}
+
+.compra-subtotal {
+  font-weight: 700;
+  color: var(--terracota);
+  font-size: 1rem;
+  margin-left: auto;
+}
+
+.compra-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.carrito-confirmacion {
+  font-size: 0.85rem;
+  color: var(--verde-oaxaca);
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.carrito-confirmacion a {
+  color: var(--terracota);
+  font-weight: 500;
+}
+
+.paypal-botones-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Pedido contacto */
+.seccion-pedido {
+  background: white;
   border-radius: var(--radio-lg);
   padding: 1.25rem;
   border: 1px solid var(--borde);
@@ -109,4 +186,5 @@
   .producto-layout { grid-template-columns: 1fr; }
   .producto-info { grid-column: 1; }
   .seccion-resenas { grid-column: 1; }
+  .compra-cantidad { flex-wrap: wrap; }
 }

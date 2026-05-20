@@ -1,21 +1,36 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { Estrellas, Cargando } from '../components/Componentes';
+import BotonPaypal from '../components/BotonPaypal';
+import { useCarrito } from '../context/CarritoContext';
+import { useAuth } from '../context/AuthContext';
 import '../components/Componentes.css';
 import './Producto.css';
 
 export default function Producto() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { agregar } = useCarrito();
+  const { usuario } = useAuth();
+
   const [producto, setProducto] = useState(null);
   const [imgActiva, setImgActiva] = useState(0);
   const [cargando, setCargando] = useState(true);
-  const [pedido, setPedido] = useState({ nombre_cliente: '', email_cliente: '', telefono_cliente: '', cantidad: 1, mensaje: '' });
+  const [cantidad, setCantidad] = useState(1);
+  const [mostrarPago, setMostrarPago] = useState(false);
+  const [agregado, setAgregado] = useState(false);
+
+  const [pedido, setPedido] = useState({
+    nombre_cliente: '', email_cliente: '',
+    telefono_cliente: '', cantidad: 1, mensaje: ''
+  });
   const [resena, setResena] = useState({ nombre_autor: '', calificacion: 5, comentario: '' });
   const [enviandoPedido, setEnviandoPedido] = useState(false);
   const [msgPedido, setMsgPedido] = useState('');
   const [enviandoResena, setEnviandoResena] = useState(false);
   const [msgResena, setMsgResena] = useState('');
+  const [pagoExitoso, setPagoExitoso] = useState(false);
 
   useEffect(() => {
     api.get(`/productos/${id}`)
@@ -24,11 +39,21 @@ export default function Producto() {
       .finally(() => setCargando(false));
   }, [id]);
 
+  const handleAgregarCarrito = () => {
+    if (!usuario) {
+      navigate('/login');
+      return;
+    }
+    agregar(producto, cantidad);
+    setAgregado(true);
+    setTimeout(() => setAgregado(false), 2500);
+  };
+
   const handlePedido = async (e) => {
     e.preventDefault();
     setEnviandoPedido(true);
     try {
-      await api.post(`/pedidos`, {
+      await api.post('/pedidos', {
         ...pedido,
         producto_id: producto.id,
         artesano_id: producto.artesano_id,
@@ -56,6 +81,11 @@ export default function Producto() {
     }
   };
 
+  const handlePagoExitoso = (datos) => {
+    setPagoExitoso(true);
+    setMostrarPago(false);
+  };
+
   if (cargando) return <Cargando />;
   if (!producto) return <div className="contenedor mt-4"><p>Producto no encontrado.</p></div>;
 
@@ -63,7 +93,7 @@ export default function Producto() {
 
   return (
     <main className="contenedor producto-layout">
-      {/* Galería + Info */}
+      {/* Galería */}
       <section className="producto-galeria">
         <div className="galeria-principal">
           {imagenes[imgActiva]?.url ? (
@@ -83,6 +113,7 @@ export default function Producto() {
         )}
       </section>
 
+      {/* Info del producto */}
       <section className="producto-info">
         {producto.categoria && <span className="badge badge-terracota">{producto.categoria}</span>}
         <h1>{producto.nombre}</h1>
@@ -121,10 +152,82 @@ export default function Producto() {
           </Link>
         )}
 
-        {/* Formulario de pedido */}
+        {/* ── Acciones de compra ── */}
+        <div className="seccion-compra">
+          {/* Selector de cantidad */}
+          <div className="compra-cantidad">
+            <label>Cantidad:</label>
+            <div className="cantidad-control-producto">
+              <button onClick={() => setCantidad(c => Math.max(1, c - 1))}>−</button>
+              <span>{cantidad}</span>
+              <button onClick={() => setCantidad(c => c + 1)}>+</button>
+            </div>
+            <span className="compra-subtotal">
+              ${(Number(producto.precio) * cantidad).toLocaleString('es-MX')} MXN
+            </span>
+          </div>
+
+          {/* Botones de acción */}
+          <div className="compra-btns">
+            {/* Agregar al carrito */}
+            <button
+              className={`btn btn-lg w-full ${agregado ? 'btn-verde' : 'btn-secundario'}`}
+              onClick={handleAgregarCarrito}
+            >
+              {agregado ? '✓ Agregado al carrito' : '🛒 Agregar al carrito'}
+            </button>
+
+            {/* Pagar directo con PayPal */}
+            {pagoExitoso ? (
+              <div className="alerta alerta-exito">
+                ✅ ¡Pago completado! El artesano se pondrá en contacto contigo.
+              </div>
+            ) : !mostrarPago ? (
+              <button
+                className="btn btn-primario btn-lg w-full"
+                onClick={() => {
+                  if (!usuario) { navigate('/login'); return; }
+                  setMostrarPago(true);
+                }}
+              >
+                💳 Comprar ahora con PayPal
+              </button>
+            ) : (
+              <div className="paypal-botones-wrap">
+                <BotonPaypal
+                  producto={producto}
+                  cantidad={cantidad}
+                  onExito={handlePagoExitoso}
+                  onError={() => setMsgPedido('Error al procesar el pago.')}
+                />
+                <button
+                  className="btn btn-secundario btn-sm w-full mt-1"
+                  onClick={() => setMostrarPago(false)}
+                >
+                  Cancelar
+                </button>
+              </div>
+            )}
+          </div>
+
+          {agregado && (
+            <div className="carrito-confirmacion">
+              <span>✓ Producto en tu carrito —</span>
+              <Link to="/carrito">Ver carrito →</Link>
+            </div>
+          )}
+
+          {msgPedido && msgPedido.includes('Error') && (
+            <div className="alerta alerta-error">{msgPedido}</div>
+          )}
+        </div>
+
+        {/* Formulario de contacto */}
         <div className="seccion-pedido">
-          <h3>Solicitar / Contactar artesano</h3>
-          {msgPedido && <div className={`alerta ${msgPedido.includes('Error') ? 'alerta-error' : 'alerta-exito'}`}>{msgPedido}</div>}
+          <h3>O contacta al artesano</h3>
+          {msgPedido && !msgPedido.includes('Error') && (
+            <div className="alerta alerta-exito">{msgPedido}</div>
+          )}
           <form onSubmit={handlePedido} className="form-pedido">
             <div className="campo">
               <label>Nombre completo *</label>
@@ -146,8 +249,8 @@ export default function Producto() {
               <label>Mensaje al artesano</label>
               <textarea rows={3} value={pedido.mensaje} onChange={e => setPedido(p => ({ ...p, mensaje: e.target.value }))} placeholder="Personalizaciones, preguntas..." />
             </div>
-            <button type="submit" className="btn btn-primario w-full" disabled={enviandoPedido}>
-              {enviandoPedido ? 'Enviando...' : 'Enviar solicitud'}
+            <button type="submit" className="btn btn-secundario w-full" disabled={enviandoPedido}>
+              {enviandoPedido ? 'Enviando...' : 'Enviar consulta'}
             </button>
           </form>
         </div>

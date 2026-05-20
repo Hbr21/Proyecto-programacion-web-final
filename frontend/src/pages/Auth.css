@@ -13,7 +13,7 @@
   border-radius: var(--radio-lg);
   padding: 2.5rem 2rem;
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
   box-shadow: 0 4px 24px var(--sombra);
 }
 
@@ -29,14 +29,8 @@
   margin-bottom: 0.5rem;
 }
 
-.auth-header h1 {
-  font-size: 1.8rem;
-  margin-bottom: 0.25rem;
-}
-
-.auth-header p {
-  font-size: 0.9rem;
-}
+.auth-header h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.auth-header p { font-size: 0.9rem; }
 
 .auth-form {
   display: flex;
@@ -55,6 +49,49 @@
   font-weight: 500;
 }
 
-.auth-footer a:hover {
-  text-decoration: underline;
+.auth-footer a:hover { text-decoration: underline; }
+
+/* ── Selector de rol ── */
+.rol-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.rol-opcion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1rem 0.75rem;
+  border: 2px solid var(--borde);
+  border-radius: var(--radio-lg);
+  background: white;
+  cursor: pointer;
+  transition: all var(--transicion);
+  font-family: var(--font-body);
+  text-align: center;
+}
+
+.rol-opcion:hover {
+  border-color: var(--terracota);
+  background: #fef8f5;
+}
+
+.rol-opcion.activo {
+  border-color: var(--terracota);
+  background: #fef3ee;
+}
+
+.rol-icono { font-size: 1.75rem; }
+
+.rol-opcion strong {
+  font-size: 0.9rem;
+  color: var(--texto);
+}
+
+.rol-opcion span {
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+  line-height: 1.3;
 }

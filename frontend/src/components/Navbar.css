@@ -26,16 +26,8 @@
   white-space: nowrap;
 }
 
-.logo-simbolo {
-  color: var(--terracota);
-  font-size: 1rem;
-}
-
-.navbar-logo em {
-  font-style: italic;
-  color: var(--terracota);
-  font-weight: 400;
-}
+.logo-simbolo { color: var(--terracota); font-size: 1rem; }
+.navbar-logo em { font-style: italic; color: var(--terracota); font-weight: 400; }
 
 .navbar-links {
   display: flex;
@@ -65,6 +57,37 @@
   padding-right: 0.25rem;
 }
 
+/* ── Carrito ── */
+.carrito-btn {
+  position: relative;
+  font-size: 1.25rem;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--transicion);
+}
+
+.carrito-btn:hover { transform: scale(1.1); }
+
+.carrito-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: var(--terracota);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+}
+
+/* Hamburguesa */
 .navbar-hamburguesa {
   display: none;
   flex-direction: column;
