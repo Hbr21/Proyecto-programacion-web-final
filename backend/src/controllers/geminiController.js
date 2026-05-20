@@ -62,7 +62,7 @@ Instrucciones:
     // 3. Llamar a Gemini (Aseguramos el modelo correcto y forzamos salida JSON nativa)
     const model = genAI.getGenerativeModel({ 
       model: 'gemini-2.0-flash',
-      generationConfig: { responseMimeType: "application/json" } // El modelo responderá en JSON puro sin bloques ```json
+      generationConfig: { responseMimeType: "application/json" }
     });
     
     const respuesta = await model.generateContent(prompt);
@@ -91,8 +91,38 @@ Instrucciones:
     });
 
   } catch (err) {
-    console.error('Error en búsqueda con Gemini:', err);
-    res.status(500).json({ error: 'Error al procesar la búsqueda inteligente.' });
+    console.error('Error en búsqueda con Gemini, aplicando respaldo SQL:', err.message);
+
+    // =========================================================================
+    // PLAN DE RESPALDO: Búsqueda tradicional si la cuota de la IA se agota (429)
+    // =========================================================================
+    try {
+      const respaldoResult = await db.query(`
+        SELECT p.id, p.nombre, p.descripcion, p.precio, p.tecnica, p.materiales,
+               c.nombre AS categoria, a.nombre_completo AS artesano, a.comunidad, a.region,
+               (SELECT url FROM imagenes_producto WHERE producto_id = p.id AND es_principal = true LIMIT 1) AS imagen_principal
+        FROM productos p
+        LEFT JOIN categorias c ON p.categoria_id = c.id
+        LEFT JOIN artesanos a ON p.artesano_id = a.id
+        WHERE p.disponible = true AND (
+          p.nombre ILIKE $1 OR 
+          p.descripcion ILIKE $1 OR 
+          p.tecnica ILIKE $1 OR 
+          c.nombre ILIKE $1
+        )
+        LIMIT 8
+      `, [`%${consulta}%`]);
+
+      return res.json({
+        productos: respaldoResult.rows,
+        explicacion: 'Búsqueda estándar (El asistente de IA se encuentra saturado pero seguimos buscando para ti).',
+        total: respaldoResult.rows.length,
+      });
+
+    } catch (sqlErr) {
+      console.error('Error total en el motor de búsqueda de respaldo:', sqlErr);
+      return res.status(500).json({ error: 'Error general al procesar la búsqueda.' });
+    }
   }
 };
 
