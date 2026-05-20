@@ -60,7 +60,7 @@ Instrucciones:
 `;
 
     // 3. Llamar a Gemini
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.0-pro' });
     const respuesta = await model.generateContent(prompt);
     const texto = respuesta.response.text();
 
