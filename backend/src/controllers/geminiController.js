@@ -115,7 +115,7 @@ Instrucciones:
 
       return res.json({
         productos: respaldoResult.rows,
-        explicacion: 'Búsqueda estándar (El asistente de IA a buscando para ti).',
+        explicacion: 'Búsqueda de IA(El asistente de IA a buscando para ti).',
         total: respaldoResult.rows.length,
       });
 
