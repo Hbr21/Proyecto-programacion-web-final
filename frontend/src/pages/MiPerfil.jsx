@@ -225,8 +225,10 @@ export default function MiPerfil() {
   };
 
   const fotoUrl = perfil?.foto_url
-    ? `/uploads/${perfil.foto_url}`
-    : null;
+  ? perfil.foto_url.startsWith('/uploads/')
+    ? perfil.foto_url
+    : `/uploads/${perfil.foto_url}`
+  : null;
 
   return (
     <main className="contenedor miperfil-layout">

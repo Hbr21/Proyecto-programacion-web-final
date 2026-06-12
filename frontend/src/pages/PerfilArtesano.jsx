@@ -22,8 +22,10 @@ export default function PerfilArtesano() {
   if (!artesano) return <div className="contenedor mt-4"><p>Artesano no encontrado.</p></div>;
 
   const foto = artesano.foto_url
-    ? `/uploads/${artesano.foto_url}`
-    : null;
+  ? artesano.foto_url.startsWith('/uploads/')
+    ? artesano.foto_url
+    : `/uploads/${artesano.foto_url}`
+  : null;
 
   return (
     <main>
