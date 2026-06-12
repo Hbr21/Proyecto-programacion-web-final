@@ -24,7 +24,12 @@ export default function MiPerfil() {
   const [categorias, setCategorias] = useState([]);
   const [editandoProd, setEditandoProd] = useState(null);
 
-  // ── Imágenes ──
+  // ── Foto de perfil ──
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const [msgFoto, setMsgFoto] = useState('');
+  const inputFotoRef = useRef(null);
+
+  // ── Imágenes de producto ──
   const [imagenesProducto, setImagenesProducto] = useState([]);
   const [subiendoImagen, setSubiendoImagen] = useState(false);
   const [msgImagen, setMsgImagen] = useState('');
@@ -46,6 +51,32 @@ export default function MiPerfil() {
     }).catch(console.error)
       .finally(() => setCargando(false));
   }, [usuario, navigate]);
+
+  // ── Subir foto de perfil ──
+  const subirFotoPerfil = async (e) => {
+    const archivo = e.target.files[0];
+    if (!archivo) return;
+
+    setSubiendoFoto(true);
+    setMsgFoto('');
+
+    const formData = new FormData();
+    formData.append('foto', archivo);
+
+    try {
+      const res = await api.post('/artesanos/perfil/foto', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setPerfil(prev => ({ ...prev, foto_url: res.data.foto_url }));
+      setForm(prev => ({ ...prev, foto_url: res.data.foto_url }));
+      setMsgFoto('Foto actualizada correctamente.');
+    } catch (err) {
+      setMsgFoto('Error al subir la foto. Máximo 5MB, formatos: jpg, png, webp.');
+    } finally {
+      setSubiendoFoto(false);
+      if (inputFotoRef.current) inputFotoRef.current.value = '';
+    }
+  };
 
   const guardarPerfil = async (e) => {
     e.preventDefault();
@@ -77,9 +108,7 @@ export default function MiPerfil() {
       }
       const res = await api.get(`/productos?artesano=${usuario.id}`);
       setProductos(res.data.productos || []);
-      setMsg(editandoProd ? 'Producto actualizado. Ahora puedes subir imágenes.' : 'Producto creado. Ahora puedes subir imágenes.');
-
-      // Cargar imágenes del producto
+      setMsg(editandoProd ? 'Producto actualizado.' : 'Producto creado. Ahora puedes subir imágenes.');
       cargarImagenes(productoId);
     } catch (err) {
       setMsg(err.response?.data?.error || 'Error al guardar producto.');
@@ -114,7 +143,6 @@ export default function MiPerfil() {
       });
       setMsgImagen('Imagen subida correctamente.');
       cargarImagenes(editandoProd);
-      // Limpiar el input
       if (inputImagenRef.current) inputImagenRef.current.value = '';
     } catch (err) {
       setMsgImagen('Error al subir la imagen. Máximo 5MB, formatos: jpg, png, webp.');
@@ -130,18 +158,6 @@ export default function MiPerfil() {
       setImagenesProducto(prev => prev.filter(i => i.id !== imgId));
     } catch (err) {
       alert('Error al eliminar imagen.');
-    }
-  };
-
-  const marcarPrincipal = async (imgId) => {
-    try {
-      // Marcar como principal actualizando
-      await api.delete(`/productos/${editandoProd}/imagenes/${imgId}`);
-      // Re-subir no es ideal, mejor usamos el endpoint de imagen con es_principal
-      // Por simplicidad recargamos las imágenes
-      cargarImagenes(editandoProd);
-    } catch (err) {
-      console.error(err);
     }
   };
 
@@ -208,6 +224,10 @@ export default function MiPerfil() {
     cancelado: ''
   };
 
+  const fotoUrl = perfil?.foto_url
+    ? `/uploads/${perfil.foto_url}`
+    : null;
+
   return (
     <main className="contenedor miperfil-layout">
       <div className="miperfil-tabs">
@@ -227,67 +247,113 @@ export default function MiPerfil() {
 
       {/* TAB: PERFIL */}
       {tab === 'perfil' && (
-        <form onSubmit={guardarPerfil} className="miperfil-form">
-          <h2>Información personal</h2>
-          <div className="form-grid">
-            <div className="campo">
-              <label>Nombre completo *</label>
-              <input required value={form.nombre_completo || ''} onChange={e => setForm(f => ({ ...f, nombre_completo: e.target.value }))} />
+        <div className="miperfil-form">
+
+          {/* ── Foto de perfil ── */}
+          <div className="foto-perfil-seccion">
+            <div className="foto-perfil-wrap">
+              {fotoUrl ? (
+                <img src={fotoUrl} alt="Foto de perfil" className="foto-perfil-img" />
+              ) : (
+                <div className="foto-perfil-placeholder">
+                  {perfil?.nombre_completo?.[0] || '✦'}
+                </div>
+              )}
+              <button
+                className="foto-perfil-cambiar"
+                onClick={() => inputFotoRef.current?.click()}
+                disabled={subiendoFoto}
+                title="Cambiar foto"
+              >
+                {subiendoFoto ? '...' : '📷'}
+              </button>
+              <input
+                ref={inputFotoRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={subirFotoPerfil}
+                style={{ display: 'none' }}
+              />
             </div>
-            <div className="campo">
-              <label>Técnica principal</label>
-              <input value={form.tecnica_principal || ''} onChange={e => setForm(f => ({ ...f, tecnica_principal: e.target.value }))} placeholder="Ej. Tejido en telar de cintura" />
-            </div>
-            <div className="campo">
-              <label>Comunidad</label>
-              <input value={form.comunidad || ''} onChange={e => setForm(f => ({ ...f, comunidad: e.target.value }))} placeholder="Ej. Teotitlán del Valle" />
-            </div>
-            <div className="campo">
-              <label>Municipio</label>
-              <input value={form.municipio || ''} onChange={e => setForm(f => ({ ...f, municipio: e.target.value }))} />
-            </div>
-            <div className="campo">
-              <label>Región</label>
-              <input value={form.region || ''} onChange={e => setForm(f => ({ ...f, region: e.target.value }))} placeholder="Ej. Valles Centrales" />
-            </div>
-            <div className="campo">
-              <label>Teléfono</label>
-              <input type="tel" value={form.telefono || ''} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))} />
-            </div>
-            <div className="campo">
-              <label>Años de experiencia</label>
-              <input type="number" min="0" value={form.anios_experiencia || ''} onChange={e => setForm(f => ({ ...f, anios_experiencia: e.target.value }))} />
-            </div>
-            <div className="campo">
-              <label>Latitud 📍</label>
-              <input type="number" step="any" placeholder="Ej. 17.0732" value={form.latitud || ''} onChange={e => setForm(f => ({ ...f, latitud: e.target.value }))} />
-            </div>
-            <div className="campo">
-              <label>Longitud 📍</label>
-              <input type="number" step="any" placeholder="Ej. -96.7266" value={form.longitud || ''} onChange={e => setForm(f => ({ ...f, longitud: e.target.value }))} />
+            <div className="foto-perfil-info">
+              <strong>{perfil?.nombre_completo || usuario?.nombre}</strong>
+              <span>{usuario?.email}</span>
+              {msgFoto && (
+                <p className={msgFoto.includes('Error') ? 'foto-msg-error' : 'foto-msg-exito'}>
+                  {msgFoto}
+                </p>
+              )}
+              <button
+                className="btn btn-secundario btn-sm"
+                onClick={() => inputFotoRef.current?.click()}
+                disabled={subiendoFoto}
+              >
+                {subiendoFoto ? 'Subiendo...' : 'Cambiar foto de perfil'}
+              </button>
             </div>
           </div>
 
-          <p style={{ fontSize: '0.8rem', color: 'var(--texto-suave)', marginTop: '-0.5rem' }}>
-            💡 Para obtener tus coordenadas: abre Google Maps, haz clic derecho en tu ubicación y copia los números.
-          </p>
+          {/* Formulario de datos */}
+          <form onSubmit={guardarPerfil}>
+            <h2 className="mb-3">Información personal</h2>
+            <div className="form-grid">
+              <div className="campo">
+                <label>Nombre completo *</label>
+                <input required value={form.nombre_completo || ''} onChange={e => setForm(f => ({ ...f, nombre_completo: e.target.value }))} />
+              </div>
+              <div className="campo">
+                <label>Técnica principal</label>
+                <input value={form.tecnica_principal || ''} onChange={e => setForm(f => ({ ...f, tecnica_principal: e.target.value }))} placeholder="Ej. Tejido en telar de cintura" />
+              </div>
+              <div className="campo">
+                <label>Comunidad</label>
+                <input value={form.comunidad || ''} onChange={e => setForm(f => ({ ...f, comunidad: e.target.value }))} placeholder="Ej. Teotitlán del Valle" />
+              </div>
+              <div className="campo">
+                <label>Municipio</label>
+                <input value={form.municipio || ''} onChange={e => setForm(f => ({ ...f, municipio: e.target.value }))} />
+              </div>
+              <div className="campo">
+                <label>Región</label>
+                <input value={form.region || ''} onChange={e => setForm(f => ({ ...f, region: e.target.value }))} placeholder="Ej. Valles Centrales" />
+              </div>
+              <div className="campo">
+                <label>Teléfono</label>
+                <input type="tel" value={form.telefono || ''} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))} />
+              </div>
+              <div className="campo">
+                <label>Años de experiencia</label>
+                <input type="number" min="0" value={form.anios_experiencia || ''} onChange={e => setForm(f => ({ ...f, anios_experiencia: e.target.value }))} />
+              </div>
+              <div className="campo">
+                <label>Latitud 📍</label>
+                <input type="number" step="any" placeholder="Ej. 17.0732" value={form.latitud || ''} onChange={e => setForm(f => ({ ...f, latitud: e.target.value }))} />
+              </div>
+              <div className="campo">
+                <label>Longitud 📍</label>
+                <input type="number" step="any" placeholder="Ej. -96.7266" value={form.longitud || ''} onChange={e => setForm(f => ({ ...f, longitud: e.target.value }))} />
+              </div>
+            </div>
 
-          <div className="campo">
-            <label>Biografía</label>
-            <textarea rows={4} value={form.biografia || ''} onChange={e => setForm(f => ({ ...f, biografia: e.target.value }))} placeholder="Cuéntanos sobre tu trabajo, tu comunidad y tu historia..." />
-          </div>
-          <button type="submit" className="btn btn-primario" disabled={guardando}>
-            {guardando ? 'Guardando...' : 'Guardar cambios'}
-          </button>
-        </form>
+            <p style={{ fontSize: '0.8rem', color: 'var(--texto-suave)', margin: '0.25rem 0 1rem' }}>
+              💡 Coordenadas: abre Google Maps, clic derecho en tu ubicación y copia los números.
+            </p>
+
+            <div className="campo">
+              <label>Biografía</label>
+              <textarea rows={4} value={form.biografia || ''} onChange={e => setForm(f => ({ ...f, biografia: e.target.value }))} placeholder="Cuéntanos sobre tu trabajo, tu comunidad y tu historia..." />
+            </div>
+            <button type="submit" className="btn btn-primario mt-2" disabled={guardando}>
+              {guardando ? 'Guardando...' : 'Guardar cambios'}
+            </button>
+          </form>
+        </div>
       )}
 
       {/* TAB: PRODUCTOS */}
       {tab === 'productos' && (
         <div className="productos-tab">
           <div className="productos-tab-layout">
-
-            {/* Formulario nuevo/editar */}
             <div className="form-producto-wrap">
               <h2>{editandoProd ? 'Editar producto' : 'Nuevo producto'}</h2>
               <form onSubmit={guardarProducto} className="form-producto">
@@ -333,39 +399,29 @@ export default function MiPerfil() {
                     {guardando ? 'Guardando...' : editandoProd ? 'Actualizar' : 'Publicar producto'}
                   </button>
                   {editandoProd && (
-                    <button type="button" className="btn btn-secundario" onClick={cancelarEdicion}>
-                      Cancelar
-                    </button>
+                    <button type="button" className="btn btn-secundario" onClick={cancelarEdicion}>Cancelar</button>
                   )}
                 </div>
               </form>
 
-              {/* ── Sección de imágenes (solo cuando se edita) ── */}
+              {/* Imágenes del producto */}
               {editandoProd && (
                 <div className="imagenes-seccion">
                   <h3>Fotos del producto</h3>
                   <p className="imagenes-tip">La primera imagen será la principal. Formatos: jpg, png, webp. Máx 5MB.</p>
 
-                  {/* Grid de imágenes actuales */}
                   {imagenesProducto.length > 0 && (
                     <div className="imagenes-grid">
                       {imagenesProducto.map(img => (
                         <div key={img.id} className={`imagen-item ${img.es_principal ? 'principal' : ''}`}>
                           <img src={`/uploads/${img.url}`} alt="Foto del producto" />
-                          {img.es_principal && (
-                            <span className="imagen-principal-badge">Principal</span>
-                          )}
-                          <button
-                            className="imagen-eliminar"
-                            onClick={() => eliminarImagen(img.id)}
-                            title="Eliminar imagen"
-                          >✕</button>
+                          {img.es_principal && <span className="imagen-principal-badge">Principal</span>}
+                          <button className="imagen-eliminar" onClick={() => eliminarImagen(img.id)}>✕</button>
                         </div>
                       ))}
                     </div>
                   )}
 
-                  {/* Subir nueva imagen */}
                   <div className="imagen-upload-area" onClick={() => inputImagenRef.current?.click()}>
                     {subiendoImagen ? (
                       <div className="spinner" />
@@ -373,7 +429,7 @@ export default function MiPerfil() {
                       <>
                         <span className="upload-icono">📸</span>
                         <p>Clic para subir una foto</p>
-                        <span className="upload-sub">o arrastra aquí</span>
+                        <span className="upload-sub">jpg, png, webp — máx 5MB</span>
                       </>
                     )}
                     <input
@@ -451,11 +507,7 @@ export default function MiPerfil() {
                   <div className="pedido-footer">
                     <span className="pedido-total">${Number(pe.total).toLocaleString('es-MX')} MXN</span>
                     <span className="pedido-fecha">{new Date(pe.creado_en).toLocaleDateString('es-MX')}</span>
-                    <select
-                      value={pe.estado}
-                      onChange={e => actualizarEstadoPedido(pe.id, e.target.value)}
-                      className="pedido-estado-sel"
-                    >
+                    <select value={pe.estado} onChange={e => actualizarEstadoPedido(pe.id, e.target.value)} className="pedido-estado-sel">
                       <option value="pendiente">Pendiente</option>
                       <option value="en_proceso">En proceso</option>
                       <option value="completado">Completado</option>
